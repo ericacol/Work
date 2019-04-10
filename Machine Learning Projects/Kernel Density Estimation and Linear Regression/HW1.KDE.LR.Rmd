@@ -1,0 +1,167 @@
+---
+title: "Homework 1 for Machine Learning"
+output:
+  pdf_document: default
+  word_document: default
+  html_document: default
+---
+
+5: Applied: Exploratory Data Analysis and KDE 
+a) Summary Data:
+  
+```{r, echo=FALSE}
+library(readr)
+library(plyr)
+library(dplyr)
+library(ggplot2)
+termination <- read_csv("termination.csv")
+#head(termination)
+summary(termination)
+#A meaningless quantity is the IDs since they are identifiers. You wouldnt need summary stastics on them as there is no numerical meaning. Otherwise I think all the data looks good.
+```
+b)
+b1) the percent of terminated employees out of all employees for each year; 
+```{r, echo=FALSE}
+SC<- as.data.frame.matrix(termination %>%
+group_by(STATUS_YEAR) %>%
+select(STATUS) %>%
+table())
+SC$TOTAL<-SC$ACTIVE + SC$TERMINATED
+SC$PercentTerminated <-SC$TERMINATED/(SC$TOTAL)*100
+SC
+```
+The percent terminated ranges from 1.97 to 4.85. This is not a huge percent a year, and there doesnt seem to be a trend in terminations.
+
+
+b2) average termination rate over the 10 years?
+```{r, echo=FALSE}
+mean(SC$PercentTerminated)
+```
+b3)
+
+```{r, echo=FALSE}
+
+Terminates<- as.data.frame(termination %>%
+filter(STATUS=="TERMINATED"))
+ggplot() + geom_bar(aes(y = ..count..,x =as.factor(STATUS_YEAR),fill = as.factor(termreason_desc)),data=Terminates,position = position_stack())
+```
+There were high layoffs in 2014 & 2015 that led to the terminations that we see in those years.
+
+C) Does Age affect termination? : Box-plots of Age for active and terminated employees 
+
+```{r, echo=FALSE}
+boxplot(termination$age~termination$STATUS, ylab = 'Age', xlab = 'Status', main = 'Summary of Status and Age')
+```
+The ones that are older are more likely terminated.
+
+D) Kernal Density Function: Does Length of Service affect termination? 
+```{r}
+#samples
+
+
+Activex <- subset(termination$length_of_service, termination$STATUS == "ACTIVE")
+Terminatedx <- subset(termination$length_of_service, termination$STATUS == "TERMINATED")
+
+xseq <-seq(0, 30, .1)
+
+dataset<-Activex
+
+ KDEG<- function(x){
+  diff = x - dataset
+  densitylist <- sapply(diff, dnorm, mean=0 , sd=0.5)
+  density <- sum(densitylist)/(46000)
+ }
+ 
+ yseq <- sapply(xseq, KDEG)
+ 
+plot(xseq, yseq, col="blue", xlab= "", ylab = "Density", type = "l", lwd=2, cex=2, ylim = c(0, 0.3))
+
+dataset<-Terminatedx
+
+ KDEG<- function(x){
+  diff = x - dataset
+  densitylist <- sapply(diff, dnorm, mean=0 , sd=0.5)
+  density <- sum(densitylist)/(1485)
+ }
+ 
+ yseq <- sapply(xseq, KDEG)
+par(new=TRUE) 
+plot(xseq, yseq, col="red", xlab= "", ylab = "Density", type = "l", lwd=2, cex=2, ylim = c(0, 0.3))
+
+
+```
+The lengths of service are more spread out for Active Status members. People who are terminated have peaks right before 10, 15, 20, and 25 years of service, with a really high peak around the 15 year mark.
+
+
+6 Applied: Linear Regression 
+a)
+```{r, echo=FALSE}
+library(ISLR)
+library(readr)
+Wage <- read_csv("hw1_data/Wage_edit.csv")
+summary(Wage)
+#head(Wage)
+#View(Wage)
+mod1 = lm(wage ~ age, data = Wage)
+	with(Wage,plot(age, wage))
+	abline(mod1)
+mod1
+```
+b)
+```{r, echo=FALSE}
+
+mod2 = lm(wage ~ age + jobclass + age*jobclass, data = Wage)
+mod2
+```
+You  will earn 22.73 on average more when in joblcass2 as apposed to joblcass 1, and earn .7197 more for every year old year are. Additionally, the interaction means that the effect of age on Height is different for different values of jobclass.
+c)
+```{r, echo=FALSE}
+#mod3 = lm(wage ~ poly(age,4),data = Wage)
+#mod3
+	#with(Wage,plot(poly(age,4), wage))
+	#abline(mod3)
+
+mod3 <- lm(formula = Wage$wage ~ Wage$age + I(Wage$age^2) + 
+    I(Wage$age^3) + I(Wage$age^4))
+summary(mod3)
+
+plot(Wage$wage~Wage$age, xlab = "Age", ylab = "Wages", main = "4th Degree Plot")
+points(Wage$age, fitted(mod3), col='red', pch=20)
+lines(sort(Wage$age), fitted(mod3)[order(Wage$age)], col='red', type='b')
+
+```
+d)
+```{r, echo=FALSE}
+Wage$jobclass<-factor(Wage$jobclass)
+Wage$maritl<-factor(Wage$maritl)
+Wage$health<-factor(Wage$health)
+Wage$race<-factor(Wage$race)
+Wage$health_ins<-factor(Wage$health_ins)
+mod5<-lm(formula = Wage$wage ~ Wage$race)
+mod5
+
+levels(Wage$wage)
+mod5 <-lm(formula = Wage$wage ~ Wage$age + Wage$year + 
+   Wage$maritl + Wage$race + Wage$jobclass + Wage$health +  Wage$health_ins + Wage$age*Wage$year + Wage$age*Wage$maritl + Wage$age*Wage$race+ Wage$age*Wage$jobclass + Wage$age*Wage$health + Wage$age*Wage$health_ins + Wage$year*Wage$maritl + Wage$year*Wage$race + Wage$year*Wage$jobclass + Wage$year*Wage$health + Wage$year*Wage$health_ins  + Wage$race*Wage$health  + Wage$race*Wage$health_ins + Wage$jobclass*Wage$health +Wage$jobclass*Wage$health_ins + Wage$health*Wage$health_ins )
+mod5
+```
+
+
+
+
+
+```{r, echo=FALSE}
+#head(Wage)
+#library(glmnet)
+#all<-data.frame(Wage)
+#dfwage<-data.frame(Wage$wage)
+#X<-data.matrix(all[1:12])
+#Y<-data.matrix(all[,13])
+#Y
+#CV = cv.glmnet(x = X, y = Y, family = "binomial", type.measure = "class", alpha = 1, nlambda = 100)
+
+#plot(CV)
+```
+
+
+
