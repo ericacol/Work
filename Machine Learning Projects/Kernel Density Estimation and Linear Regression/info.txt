@@ -1,0 +1,1 @@
+This is a folder that incudes KDE code from scratch, EDA on a dataset terminations and Linear regression
